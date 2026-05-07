@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stage Soundboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f5f3;
+      color: #1a1a18;
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+    }
+
+    .top-bar h1 {
+      font-size: 20px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .top-actions { display: flex; gap: 8px; }
+
+    .btn-add {
+      background: #eaf3de;
+      color: #3b6d11;
+      border: 0.5px solid #97c459;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-add:hover { opacity: 0.85; }
+
+    .stop-all {
+      background: #fcebeb;
+      color: #a32d2d;
+      border: 0.5px solid #f09595;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stop-all:hover { opacity: 0.85; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .cue-card {
+      background: #ffffff;
+      border: 0.5px solid rgba(0,0,0,0.12);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .cue-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cue-num {
+      font-size: 11px;
+      color: #888780;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    .btn-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #b4b2a9;
+      font-size: 15px;
+      padding: 0;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    .btn-remove:hover { color: #a32d2d; }
+
+    .cue-label-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .cue-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1a1a18;
+      border: none;
+      background: transparent;
+      width: 100%;
+      padding: 2px 22px 2px 0;
+      outline: none;
+      cursor: text;
+      border-bottom: 1px solid transparent;
+      font-family: inherit;
+    }
+
+    .cue-label:focus { border-bottom-color: rgba(0,0,0,0.25); }
+    .cue-label::placeholder { color: #b4b2a9; font-weight: 400; }
+
+    .edit-icon {
+      position: absolute;
+      right: 0;
+      font-size: 13px;
+      color: #b4b2a9;
+      pointer-events: none;
+    }
+
+    .file-name {
+      font-size: 12px;
+      color: #888780;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-height: 16px;
+    }
+
+    .upload-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #5f5e5a;
+      border: 0.5px dashed rgba(0,0,0,0.25);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    .upload-label:hover { background: #f5f5f3; }
+    .upload-label input { display: none; }
+
+    .play-btn {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 0.5px solid rgba(0,0,0,0.2);
+      background: #f1efe8;
+      color: #1a1a18;
+      transition: background 0.1s;
+      font-family: inherit;
+    }
+
+    .play-btn:hover:not(:disabled) { background: #e0ddd6; }
+
+    .play-btn.playing {
+      background: #eaf3de;
+      color: #3b6d11;
+      border-color: #97c459;
+    }
+
+    .play-btn:disabled { opacity: 0.35; cursor: default; }
+
+    .vol-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vol-row i { font-size: 14px; color: #5f5e5a; flex-shrink: 0; }
+
+    .vol-row input[type=range] {
+      flex: 1;
+      cursor: pointer;
+      accent-color: #639922;
+    }
+
+    .vol-pct {
+      font-size: 11px;
+      color: #888780;
+      min-width: 30px;
+      text-align: right;
+    }
+
+    .mini-controls { display: flex; gap: 6px; }
+
+    .mini-btn {
+      flex: 1;
+      padding: 6px;
+      font-size: 12px;
+      border-radius: 8px;
+      border: 0.5px solid rgba(0,0,0,0.12);
+      background: transparent;
+      color: #5f5e5a;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-family: inherit;
+    }
+
+    .mini-btn:hover:not(:disabled) { background: #f1efe8; }
+    .mini-btn.fade { color: #185fa5; border-color: #85b7eb; }
+    .mini-btn:disabled { opacity: 0.3; cursor: default; }
+
+    .progress {
+      height: 3px;
+      background: rgba(0,0,0,0.1);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: #639922;
+      width: 0%;
+      transition: width 0.25s linear;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #888780;
+      font-size: 14px;
+      border: 0.5px dashed rgba(0,0,0,0.15);
+      border-radius: 12px;
+    }
+
+    .empty-state i { font-size: 30px; display: block; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <h1><i class="ti ti-theater"></i> Stage soundboard</h1>
+    <div class="top-actions">
+      <button class="btn-add" onclick="addCue()"><i class="ti ti-plus"></i> Add cue</button>
+      <button class="stop-all" onclick="stopAll()"><i class="ti ti-player-stop"></i> Stop all</button>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div id="empty" class="empty-state">
+    <i class="ti ti-music-off"></i>
+    No cues yet — press "Add cue" to get started
+  </div>
+
+  <script>
+    let nextId = 0;
+    const cues = [];
+    const progressIntervals = {};
+
+    function addCue() {
+      cues.push({ id: nextId++, name: '', file: null, audio: null, playing: false, fading: false, volume: 100 });
+      render();
+      const inputs = document.querySelectorAll('.cue-label');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    }
+
+    function removeCue(id) {
+      const idx = cues.findIndex(c => c.id === id);
+      if (idx === -1) return;
+      const cue = cues[idx];
+      if (cue.audio) { cue.audio.pause(); cue.audio.src = ''; }
+      clearInterval(progressIntervals[id]);
+      cues.splice(idx, 1);
+      render();
+    }
+
+    function setName(id, val) {
+      const cue = cues.find(c => c.id === id);
+      if (cue) cue.name = val;
+    }
+
+    function render() {
+      const grid = document.getElementById('grid');
+      const empty = document.getElementById('empty');
+      empty.style.display = cues.length === 0 ? 'block' : 'none';
+
+      const existing = {};
+      grid.querySelectorAll('.cue-card').forEach(el => { existing[el.dataset.id] = el; });
+
+      const newIds = new Set(cues.map(c => String(c.id)));
+      Object.keys(existing).forEach(id => { if (!newIds.has(id)) existing[id].remove(); });
+
+      cues.forEach((cue, i) => {
+        const sid = String(cue.id);
+        let card = existing[sid];
+        if (!card) {
+          card = document.createElement('div');
+          card.className = 'cue-card';
+          card.dataset.id = sid;
+          grid.appendChild(card);
+        }
+
+        card.innerHTML = `
+          <div class="cue-header">
+            <div class="cue-num">CUE ${i + 1}</div>
+            <button class="btn-remove" onclick="removeCue(${cue.id})" aria-label="Remove cue ${i + 1}">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+          <div class="cue-label-wrap">
+            <input class="cue-label" type="text" maxlength="40"
+              placeholder="Name this cue…"
+              value="${cue.name.replace(/"/g, '&quot;')}"
+              oninput="setName(${cue.id}, this.value)"
+              aria-label="Cue ${i + 1} name" />
+            <i class="ti ti-pencil edit-icon"></i>
+          </div>
+          <div class="file-name">${cue.file ? cue.file.name.replace(/\.[^.]+$/, '') : 'No file loaded'}</div>
+          <label class="upload-label">
+            <i class="ti ti-upload" style="font-size:14px"></i>
+            <span>${cue.file ? 'Replace audio' : 'Load audio'}</span>
+            <input type="file" accept="audio/*" onchange="loadFile(${cue.id}, this)" />
+          </label>
+          <button class="play-btn${cue.playing ? ' playing' : ''}" id="play-${cue.id}"
+            onclick="togglePlay(${cue.id})" ${!cue.file ? 'disabled' : ''}>
+            <i class="ti ${cue.playing ? 'ti-player-pause' : 'ti-player-play'}" style="font-size:16px"></i>
+            ${cue.playing ? 'Playing' : 'Play'}
+          </button>
+          <div class="progress"><div class="progress-bar" id="prog-${cue.id}"></div></div>
+          <div class="vol-row">
+            <i class="ti ti-volume"></i>
+            <input type="range" min="0" max="100" step="1" value="${cue.volume}"
+              oninput="setVolume(${cue.id}, this.value)" aria-label="Volume cue ${i + 1}" />
+            <span class="vol-pct" id="volpct-${cue.id}">${cue.volume}%</span>
+          </div>
+          <div class="mini-controls">
+            <button class="mini-btn" onclick="stopCue(${cue.id})" ${!cue.playing ? 'disabled' : ''}>
+              <i class="ti ti-player-stop" style="font-size:13px"></i> Stop
+            </button>
+            <button class="mini-btn fade" onclick="fadeCue(${cue.id})"
+              ${!cue.playing || cue.fading ? 'disabled' : ''}>
+              <i class="ti ti-trending-down" style="font-size:13px"></i> Fade
+            </button>
+          </div>
+        `;
+      });
+
+      const cardIds = Array.from(grid.querySelectorAll('.cue-card')).map(el => el.dataset.id);
+      const cueIds = cues.map(c => String(c.id));
+      if (JSON.stringify(cardIds) !== JSON.stringify(cueIds)) {
+        cues.forEach(cue => {
+          const el = grid.querySelector(`[data-id="${cue.id}"]`);
+          if (el) grid.appendChild(el);
+        });
+      }
+    }
+
+    function loadFile(id, input) {
+      const file = input.files[0];
+      if (!file) return;
+      const cue = cues.find(c => c.id === id);
+      if (!cue) return;
+      if (cue.audio) { cue.audio.pause(); cue.audio.src = ''; }
+      const url = URL.createObjectURL(file);
+      cue.file = file;
+      cue.playing = false;
+      cue.fading = false;
+      const audio = new Audio();
+      audio.src = url;
+      audio.volume = cue.volume / 100;
+      audio.addEventListener('ended', () => {
+        cue.playing = false;
+        cue.fading = false;
+        clearInterval(progressIntervals[id]);
+        render();
+      });
+      cue.audio = audio;
+      render();
+    }
+
+    function togglePlay(id) {
+      const cue = cues.find(c => c.id === id);
+      if (!cue || !cue.audio) return;
+      if (cue.playing) {
+        cue.audio.pause();
+        cue.playing = false;
+        cue.fading = false;
+        clearInterval(progressIntervals[id]);
+        render();
+      } else {
+        cue.audio.currentTime = 0;
+        cue.audio.volume = cue.volume / 100;
+        const p = cue.audio.play();
+        if (p !== undefined) {
+          p.then(() => {
+            cue.playing = true;
+            cue.fading = false;
+            render();
+            startProgress(id);
+          }).catch(() => {});
+        }
+      }
+    }
+
+    function stopCue(id) {
+      const cue = cues.find(c => c.id === id);
+      if (!cue || !cue.audio) return;
+      cue.audio.pause();
+      cue.audio.currentTime = 0;
+      cue.playing = false;
+      cue.fading = false;
+      clearInterval(progressIntervals[id]);
+      const bar = document.getElementById('prog-' + id);
+      if (bar) bar.style.width = '0%';
+      render();
+    }
+
+    function fadeCue(id) {
+      const cue = cues.find(c => c.id === id);
+      if (!cue || !cue.audio || !cue.playing || cue.fading) return;
+      cue.fading = true;
+      render();
+      const step = cue.audio.volume / 25;
+      const interval = setInterval(() => {
+        if (cue.audio.volume > step) {
+          cue.audio.volume = Math.max(0, cue.audio.volume - step);
+        } else {
+          cue.audio.volume = 0;
+          cue.audio.pause();
+          cue.audio.currentTime = 0;
+          cue.playing = false;
+          cue.fading = false;
+          clearInterval(interval);
+          clearInterval(progressIntervals[id]);
+          render();
+        }
+      }, 60);
+    }
+
+    function setVolume(id, val) {
+      const cue = cues.find(c => c.id === id);
+      if (!cue) return;
+      cue.volume = parseInt(val);
+      const pct = document.getElementById('volpct-' + id);
+      if (pct) pct.textContent = val + '%';
+      if (cue.audio && !cue.fading) cue.audio.volume = cue.volume / 100;
+    }
+
+    function stopAll() {
+      cues.forEach(cue => {
+        if (cue.audio) { cue.audio.pause(); cue.audio.currentTime = 0; }
+        cue.playing = false;
+        cue.fading = false;
+        clearInterval(progressIntervals[cue.id]);
+      });
+      document.querySelectorAll('.progress-bar').forEach(b => b.style.width = '0%');
+      render();
+    }
+
+    function startProgress(id) {
+      clearInterval(progressIntervals[id]);
+      progressIntervals[id] = setInterval(() => {
+        const cue = cues.find(c => c.id === id);
+        const bar = document.getElementById('prog-' + id);
+        if (!bar || !cue || !cue.audio || !cue.audio.duration || !cue.playing) {
+          clearInterval(progressIntervals[id]);
+          return;
+        }
+        bar.style.width = (cue.audio.currentTime / cue.audio.duration * 100).toFixed(1) + '%';
+      }, 250);
+    }
+
+    render();
+  </script>
+</body>
+</html>
